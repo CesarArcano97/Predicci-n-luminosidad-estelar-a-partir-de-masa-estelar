@@ -1,0 +1,394 @@
+---
+title: "Transformación Box-Cox para predecir luminosidad a partir de la masa estelar"
+author: "Aguirre César, Bartolon Gustavo & Luján Uziel"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Análisis de Masa y Luminosidad Estelar
+
+Este análisis utiliza datos de temperatura efectiva (\(T_{\text{eff}}\)) para calcular propiedades estelares como masa y luminosidad. Además, se aplica la transformación de Box-Cox para mejorar las relaciones lineales y se realizan predicciones sobre nuevos datos. 
+
+---
+
+## Carga de Librerías y Datos
+
+Se cargan las librerías necesarias y los datos provenientes de un archivo `.ods`. Este conjunto de datos incluye información sobre la temperatura efectiva (\(T_{\text{eff}}\)) de diferentes estrellas.
+
+```{r}
+library(ggplot2)
+library(MASS)
+library(readODS)
+```
+
+```{r}
+file_path <- "/home/cesar/Documentos/Masas.ods" # Cambiar la ruta acorde a la ubicación en tu computadora
+data <- read_ods(file_path, sheet = 1)
+head(data)
+```
+
+## Cálculo de Masa Estelar
+
+La masa estelar se calcula en función de la temperatura efectiva usando una relación proporcional:
+- Si \(T_{\text{eff}} < T_{\odot}\): \(M \propto \left(\frac{T_{\text{eff}}}{T_{\odot}}\right)^2\)
+- Si \(T_{\text{eff}} \geq T_{\odot}\): \(M \propto \left(\frac{T_{\text{eff}}}{T_{\odot}}\right)^4\)
+
+```{r}
+T_sun <- 5778  # Temperatura en Kelvin
+
+# Función para calcular masa estelar
+calculate_mass <- function(T_eff) {
+  if (T_eff < T_sun) {
+    return((T_eff / T_sun)^2)
+  } else {
+    return((T_eff / T_sun)^4)
+  }
+}
+
+# Aplicar función a los datos
+data$Masa_estelar <- sapply(data$T_eff, calculate_mass)
+head(data[c("T_eff", "Masa_estelar")])
+```
+
+## Cálculo de Luminosidad Estelar
+
+La luminosidad estelar (\(L\)) se calcula en función de la masa (\(M\)) y la temperatura efectiva (\(T_{\text{eff}}\)). La relación utilizada considera que:
+
+1. El radio estelar (\(R\)) es proporcional a \(M^{0.8}\).
+2. La luminosidad es proporcional a \(R^2 \cdot \left(\frac{T_{\text{eff}}}{T_{\odot}}\right)^4\).
+
+Por lo tanto, la fórmula es:
+\[
+L \propto R^2 \cdot \left(\frac{T_{\text{eff}}}{T_{\odot}}\right)^4, \quad \text{donde} \quad R \propto M^{0.8}.
+\]
+
+```{r}
+# Función para calcular luminosidad
+calculate_luminosity <- function(mass, T_eff) {
+  R <- mass^0.8 
+  L <- R^2 * (T_eff / T_sun)^4
+  return(L)
+}
+
+# Aplicar función a los datos
+data$Luminosidad <- mapply(calculate_luminosity, data$Masa_estelar, data$T_eff)
+head(data[c("T_eff", "Masa_estelar", "Luminosidad")])
+```
+
+```{r}
+# Relación Masa - T_eff
+ggplot(data, aes(x = T_eff, y = Masa_estelar)) +
+  geom_point(color = "blue", alpha = 0.7) +
+  labs(title = "Relación Masa - T_eff", x = "Temperatura Efectiva (K)", y = "Masa Estelar") +
+  theme_minimal()
+
+# Relación Luminosidad - T_eff
+ggplot(data, aes(x = T_eff, y = Luminosidad)) +
+  geom_point(color = "red", alpha = 0.7) +
+  labs(title = "Relación Luminosidad - T_eff", x = "Temperatura Efectiva (K)", y = "Luminosidad") +
+  theme_minimal()
+
+# Relación entre Masa Estelar y Luminosidad
+ggplot(data, aes(x = Masa_estelar, y = Luminosidad)) +
+  geom_point(color = "purple", alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm", color = "orange", linetype = "dashed", se = FALSE) + # Línea de tendencia
+  labs(
+    title = "Relación entre Masa Estelar y Luminosidad",
+    x = "Masa Estelar (M/M_⊙)",
+    y = "Luminosidad (L/L_⊙)"
+  ) +
+  theme_minimal()
+
+# M_⊙ := Masa del Sol
+# L_⊙ := Luminosidad del Sol
+
+```
+```{r}
+# Histograma y densidad de la masa estelar
+ggplot(data, aes(x = Masa_estelar)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.1, fill = "blue", color = "black", alpha = 0.7) +
+  labs(
+    title = "Distribución de la Masa Estelar",
+    x = "Masa Estelar (M/M_sun)",
+    y = "Densidad"
+  ) +
+  theme_minimal()
+
+# Histograma y densidad de la luminosidad
+ggplot(data, aes(x = Luminosidad)) +
+  geom_histogram(aes(y = ..density..), binwidth = 1.5, fill = "green", color = "black", alpha = 0.7)+
+  labs(
+    title = "Distribución de la Luminosidad",
+    x = "Luminosidad (L/L_sun)",
+    y = "Densidad"
+  ) +
+  theme_minimal()
+
+```
+## Transformaciones Box-Cox
+
+Se aplica la transformación de Box-Cox para mejorar la linealidad de las relaciones entre variables.
+
+
+```{r}
+# Función para calcular la verosimilitud logarítmica de Box-Cox
+log_likelihood_boxcox <- function(y, lambda) {
+  n <- length(y)
+  if (lambda == 0) {
+    # Caso especial: logaritmo
+    y_trans <- log(y)
+  } else {
+    # Transformación general
+    y_trans <- (y^lambda - 1) / lambda
+  }
+  log_likelihood <- -n / 2 * log(var(y_trans)) + (lambda - 1) * sum(log(y))
+  return(log_likelihood)
+}
+
+# Encontrar el mejor lambda
+find_optimal_lambda <- function(y, lambda_seq) {
+  log_likelihoods <- sapply(lambda_seq, log_likelihood_boxcox, y = y)
+  optimal_lambda <- lambda_seq[which.max(log_likelihoods)]
+  return(list(optimal_lambda = optimal_lambda, log_likelihoods = log_likelihoods))
+}
+
+# Aplicar la transformación Box-Cox
+apply_boxcox <- function(y, lambda) {
+  if (lambda == 0) {
+    return(log(y))
+  } else {
+    return((y^lambda - 1) / lambda)
+  }
+}
+
+# Secuencia de valores lambda usando método de Grid Search
+lambda_seq <- seq(-2, 2, 0.1)
+
+# Aplicar para Masa Estelar
+result_masa <- find_optimal_lambda(data$Masa_estelar, lambda_seq)
+lambda_masa <- result_masa$optimal_lambda
+cat("Lambda óptimo para Masa Estelar:", lambda_masa, "\n")
+
+data$Masa_estelar_BoxCox <- apply_boxcox(data$Masa_estelar, lambda_masa)
+
+# Aplicar para Luminosidad
+result_luminosidad <- find_optimal_lambda(data$Luminosidad, lambda_seq)
+lambda_luminosidad <- result_luminosidad$optimal_lambda
+cat("Lambda óptimo para Luminosidad:", lambda_luminosidad, "\n")
+
+data$Luminosidad_BoxCox <- apply_boxcox(data$Luminosidad, lambda_luminosidad)
+
+# Función general para calcular log-verosimilitud e intervalo de confianza
+calculate_ci <- function(log_likelihoods, lambda_seq) {
+  max_ll <- max(log_likelihoods)
+  cutoff <- max_ll - 0.5 * qchisq(0.95, df = 1)
+  ci_indices <- which(log_likelihoods >= cutoff)
+  ci_lambda <- range(lambda_seq[ci_indices])
+  return(list(cutoff = cutoff, ci_lambda = ci_lambda))
+}
+
+# Función para graficar log-verosimilitud
+plot_log_likelihood <- function(log_likelihoods, lambda_seq, optimal_lambda, title) {
+  ci <- calculate_ci(log_likelihoods, lambda_seq)
+  plot(lambda_seq, log_likelihoods, type = "l", col = "blue", lwd = 2,
+       main = title, xlab = expression(lambda), ylab = "Log-Verosimilitud")
+  abline(h = ci$cutoff, col = "black", lty = 2)
+  abline(v = ci$ci_lambda, col = "black", lty = 3)
+  abline(v = optimal_lambda, col = "red", lty = 2)
+}
+
+# Aplicar y graficar para Masa Estelar
+lambda_seq <- seq(-2, 2, 0.1)
+log_likelihoods_masa <- result_masa$log_likelihoods
+plot_log_likelihood(log_likelihoods_masa, lambda_seq, lambda_masa,
+                    title = "Log-Verosimilitud para Masa Estelar")
+
+# Aplicar y graficar para Luminosidad
+log_likelihoods_luminosidad <- result_luminosidad$log_likelihoods
+plot_log_likelihood(log_likelihoods_luminosidad, lambda_seq, lambda_luminosidad,
+                    title = "Log-Verosimilitud para Luminosidad")
+head(data)
+
+```
+
+## Comparación de Distribuciones
+
+Se comparan las distribuciones originales y transformadas de Masa y Luminosidad.
+
+```{r}
+# Comparar distribuciones de Masa Estelar antes y después de Box-Cox
+ggplot(data) +
+  geom_density(aes(x = Masa_estelar), color = "blue", fill = "blue", alpha = 0.4) +
+  geom_density(aes(x = Masa_estelar_BoxCox), color = "red", fill = "red", alpha = 0.4) +
+  labs(
+    title = "Distribución de Masa Estelar (Original vs Transformada)",
+    x = "Masa Estelar",
+    y = "Densidad"
+  ) +
+  scale_x_continuous(
+    limits = c(min(c(data$Masa_estelar, data$Masa_estelar_BoxCox)),
+               max(c(data$Masa_estelar, data$Masa_estelar_BoxCox))),
+    breaks = scales::pretty_breaks(n = 10)
+  ) +
+  theme_minimal() +
+  annotate("text", x = max(c(data$Masa_estelar, data$Masa_estelar_BoxCox)) - 0.5,
+           y = max(density(data$Masa_estelar)$y) - 0.05, label = "Masa Estelar original", color = "blue", hjust = 1) +
+  annotate("text", x = max(c(data$Masa_estelar, data$Masa_estelar_BoxCox)) - 0.5,
+           y = max(density(data$Masa_estelar)$y) - 0.20, label = "Masa Estelar transformada", color = "red", hjust = 1)
+
+# Comparar distribuciones de Luminosidad antes y después de Box-Cox
+ggplot(data) +
+  geom_density(aes(x = Luminosidad), color = "green", fill = "green", alpha = 0.4) +
+  geom_density(aes(x = Luminosidad_BoxCox), color = "purple", fill = "purple", alpha = 0.4) +
+  labs(
+    title = "Distribución de Luminosidad (Original vs Transformada)",
+    x = "Luminosidad",
+    y = "Densidad"
+  ) +
+  scale_x_continuous(
+    limits = c(-5, 15),
+    breaks = scales::pretty_breaks(n = 10)
+  ) +
+  theme_minimal() +
+  annotate("text", x = 14, y = 0.6, label = "Luminosidad original", color = "green", hjust = 1) +
+  annotate("text", x = 14, y = 0.55, label = "Luminosidad transformada", color = "purple", hjust = 1) 
+```
+
+## Comparación de Modelos Lineales
+
+Se ajustan modelos de regresión lineal antes y después de la transformación para evaluar mejoras.
+
+```{r}
+# Regresión antes de Box-Cox
+modelo_original <- lm(Luminosidad ~ Masa_estelar, data = data)
+summary(modelo_original)
+
+# Regresión después de Box-Cox
+modelo_transformado <- lm(Luminosidad_BoxCox ~ Masa_estelar_BoxCox, data = data)
+summary(modelo_transformado)
+```
+## Resultados Finales
+
+Se evalúan las predicciones realizadas a partir de los modelos ajustados.
+
+```{r}
+plot_original <- ggplot(data, aes(x = Masa_estelar, y = Luminosidad)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(
+    title = "Regresión Lineal Antes de la Transformación",
+    x = "Masa Estelar (Original)",
+    y = "Luminosidad (Original)"
+  ) +
+  theme_minimal()
+
+plot_transformado <- ggplot(data, aes(x = Masa_estelar_BoxCox, y = Luminosidad_BoxCox)) +
+  geom_point(alpha = 0.5, color = "green") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(
+    title = "Regresión Lineal Después de la Transformación Box-Cox",
+    x = "Masa Estelar (Box-Cox)",
+    y = "Luminosidad (Box-Cox)"
+  ) +
+  theme_minimal()
+
+summary_original <- summary(modelo_original)
+cat("Modelo Antes de Box-Cox\n")
+cat("R^2:", summary_original$r.squared, "\n")
+cat("Error Estándar Residual (RMSE):", sqrt(mean(residuals(modelo_original)^2)), "\n\n")
+
+summary_transformado <- summary(modelo_transformado)
+cat("Modelo Después de Box-Cox\n")
+cat("R^2:", summary_transformado$r.squared, "\n")
+cat("Error Estándar Residual (RMSE):", sqrt(mean(residuals(modelo_transformado)^2)), "\n")
+
+print(plot_original)
+print(plot_transformado)
+```
+## Validación con Nuevos Datos
+
+En esta sección, se utilizan datos nuevos para evaluar el modelo desarrollado. El objetivo es predecir la luminosidad estelar en función de la masa estelar y validar las predicciones mediante el cálculo de residuos, \(R^2\), y MSE.
+
+### Cargar Nuevos Datos
+Se cargan los nuevos datos desde un archivo `.ods`, los cuales contienen la temperatura efectiva (\(T_{\text{eff}}\)) para predicción. 
+
+```{r}
+file_path <- "/home/cesar/Documentos/Masas-a-predecir.ods" # Cambiar la ruta acorde a la ubicación en tu computadora
+nuevos_datos <- read_ods(file_path, sheet = 1)
+head(nuevos_datos)
+```
+
+### Aplicar Transformaciones Box-Cox
+Se aplican las transformaciones Box-Cox usando los valores óptimos de \(\lambda\) obtenidos previamente.
+
+```{r}
+file_path <- "/home/cesar/Documentos/Masas-a-predecir.ods" 
+nuevos_datos <- read_ods(file_path, sheet = 1)
+
+if (!"T_eff" %in% colnames(nuevos_datos)) {
+  stop("La columna 'T_eff' no está presente en los datos.")
+}
+nuevos_datos$T_eff <- as.numeric(nuevos_datos$T_eff)
+
+nuevos_datos$Masa_estelar <- sapply(nuevos_datos$T_eff, calculate_mass)
+nuevos_datos$Luminosidad <- mapply(calculate_luminosity, nuevos_datos$Masa_estelar, nuevos_datos$T_eff)
+
+lambda_masa <- -0.7878788 
+if (lambda_masa == 0) {
+  nuevos_datos$Masa_estelar_BoxCox <- log(nuevos_datos$Masa_estelar)
+} else {
+  nuevos_datos$Masa_estelar_BoxCox <- (nuevos_datos$Masa_estelar^lambda_masa - 1) / lambda_masa
+}
+
+lambda_luminosidad <- -0.1818182
+nuevos_datos$Luminosidad_Pred_Transformada <- predict(modelo_transformado, newdata = nuevos_datos)
+
+nuevos_datos$Luminosidad_Pred <- inverse_boxcox(nuevos_datos$Luminosidad_Pred_Transformada, lambda_luminosidad)
+
+head(nuevos_datos[c("T_eff", "Masa_estelar", "Masa_estelar_BoxCox", "Luminosidad", "Luminosidad_Pred")])
+```
+### Comparación de Predicciones
+Se comparan las predicciones realizadas por el modelo con los valores calculados para validar el desempeño.
+
+```{r}
+ggplot(nuevos_datos, aes(x = Luminosidad, y = Luminosidad_Pred)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "Comparación entre Luminosidad Calculada y Predicha",
+    x = "Luminosidad Calculada",
+    y = "Luminosidad Predicha"
+  ) +
+  theme_minimal()
+```
+### Métricas de Validación
+Se calculan \(R^2\) y el Error Cuadrático Medio (MSE) para evaluar el desempeño del modelo.
+
+```{r}
+nuevos_datos$Luminosidad_Real <- nuevos_datos$Luminosidad
+r_squared <- cor(nuevos_datos$Luminosidad_Real, nuevos_datos$Luminosidad_Pred)^2
+mse <- mean((nuevos_datos$Luminosidad_Real - nuevos_datos$Luminosidad_Pred)^2)
+
+cat("R²:", r_squared, "\n")
+cat("MSE:", mse, "\n")
+```
+
+### Análisis de Residuos
+Se analiza el comportamiento de los residuos para identificar posibles sesgos en el modelo.
+
+```{r}
+nuevos_datos$residuos <- nuevos_datos$Luminosidad_Real - nuevos_datos$Luminosidad_Pred
+
+ggplot(nuevos_datos, aes(x = Luminosidad_Pred, y = residuos)) +
+  geom_point(color = "darkorange", alpha = 0.7) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "Gráfico de Residuos",
+    x = "Luminosidad Predicha",
+    y = "Residuos (Real - Predicha)"
+  ) +
+  theme_minimal()
+```
+
+
