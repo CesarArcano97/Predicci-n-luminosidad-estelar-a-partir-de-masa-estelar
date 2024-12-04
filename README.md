@@ -80,7 +80,7 @@ Finalmente, para validar nuestro modelo de regresión lineal ajustado con Box-Co
 
 ![image](https://github.com/user-attachments/assets/3fad77f2-ab7e-4a59-b736-e953601721ad)
 
-Sin embargo, en valores de luminosidad altos, por encima de los 60 puntos, se puede observar subestimación en las predicciones, ya que los puntos se desvían por debajo de la línea. Esto puede tener dos razones: la primera es que las estrellas con alta luminosidad suelen ser menos frecuentes y podrían estar siendo poco representadas por el modelo. Asimismo, aunque Box-Cox linealiza la relación en buena medida, no se está capturando a la perfección todas las características de estrellas más masivas. 
+Sin embargo, en valores de luminosidad altos, por encima de los 60 puntos, se puede observar subestimación en las predicciones, ya que los puntos se desvían por debajo de la línea. Esto puede tener dos razones: la primera es que las estrellas con alta luminosidad podrían estar siendo poco representadas por el modelo. Asimismo, aunque Box-Cox linealiza la relación en buena medida, no se está capturando a la perfección todas las características de estrellas más masivas. 
 
 Haciendo la recapitulación de todo, podemos decir que nuestra transformación Box-Cox fue suficientemente efectiva. 
 
