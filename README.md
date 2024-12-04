@@ -63,7 +63,15 @@ Además, encontramos un $R^2$ de 0.99701 puntos y un $MSE$ de 0.06319 puntos. En
 Recordemos que el $R^2$ (Coeficiente de determinación), es una métrica que mide qué tan bien el modelo explica la variabilidad de los datos observados. Valores cercanos al 1 indicaría que el modelo explica bien los datos, mientras que valores cercanos a 0 indicarían que el modelo no los puede explicar. La ecuación que la describe es:
 
 $$
-R^2 = 1 - \frac{Suma de Residuos al Cuadrado}{Suma Total al Cuadrado}
+R^2 = 1 - \frac{Suma\;de\;Residuos\;al\;Cuadrado}{Suma\;Total\;al\;Cuadrado}
+$$
+
+En nuestro caso, tenemos un $R^2$ de 0.99701 puntos, por lo que nuestro modelo explica la variabilidad de los datos transformados en un 99.7%. 
+
+Por otro lado, el $MSE$ (Error Cuadrático Medio) mide el error promedio de las predicciones del modelo y los valores reales, elevando las diferencias al cuadrado para penalizar errores grandes. Valores pequeños indica un mejor ajuste del modelo. La expresión que modela esto es:
+
+$$
+MSE = \frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)^2
 $$
 
 Finalmente, para validar nuestro modelo de regresión lineal ajustado con Box-Cox, utilizamos un conjunto de datos nuevo para predecir sus luminosidades. El resultado gráfico demuestra una alta concordancia entre las luminosidades calculadas con las ecuaciones y las predichas, especialmente para valores bajos y medios. Esto se observa al seguir la línea de predicción con los puntos calculados. 
