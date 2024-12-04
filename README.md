@@ -33,7 +33,42 @@ Para los fines de este proyecto, nos quedamos con la temperatura de estrellas co
 
 Ahora bien, dado que la relación entre masa estelar y luminosidad no es lineal en el espacio original, se aplicó una transformación Box-Cox para mejorar la linealidad y garantizar la homogeneidad de varianza (corrección de heterocedasticidad). Esto permitió cumplir con lo necesario para ajustar un modelo de regresión lineal robusto. 
 
+![image](https://github.com/user-attachments/assets/2534ae4a-1d4b-4e5b-bbe1-0050e649232d)
+
 Incluimos la validación de nuestro proyecto utilizando datos distintos al conjunto de entrenamiento para evaluar métricas de ajuste como el coeficiente de determinación $R^2$, y el error cuadrático medio $MSE$.
+
+Adicionalmente, el análisis revela que las distribuciones de masa estelar y luminosidad no son normales en el espacio original, presentando un sesgo hacia la derecha y alta varianza. Estas características justificaron el uso de la transformación Box-Cox, que permitió obtener distribuciones más simétricas y mejor adaptadas al modelo lineal. 
+
+# Resultados
+
+Las distribuciones de la masa estelar y la luminosidad presentan sesgo hacia la derecha. Este sesgo indica que ambas distribuciones están concentradas en valores bajos, pero con una cola extendida hacia valores mayores, lo que deja entrever que no son normales. Esto es un comportamiento bastante esperado pues, en astronomía y astrofísica, la mayoría de las estrellas tienen masas y luminosidades relativamente bajas (como enanas rojas), mientras que pocas poseen valores significativamente mayores, como las supermasivas. 
+
+Para abordar estas características y cumplir con los supuestos necesarios para aplicar regresión lineal, como la normalidad de los residuos o la homocedasticidad, se utilizó la transformación Box-Cox. Las lambdas óptimas fueron:
+
+* Lambda óptimo para masa estelar: $\lambda_{ME} = -0.8$
+* Lambda óptimo para luminosidad: $\lambda_{\ell} = -0.2$
+
+Asimismo, en la siguiente figura, podemos ver cómo esta transformación logra reducir el sesgo a la derecha y aproximar la simetría en cada distribución. 
+
+![image](https://github.com/user-attachments/assets/8fb7e815-e2e4-492d-84cd-56d096c11814)
+
+De color azul podemos apreciar la distribución de la masa estelar tal como viene en los datos reales, mientras que la roja representa la distribución al realizar Box-Cox. Por otra parte, la distribución de luminosidad verde representa a la original de nuestros datos, mientras que la morada representa a la transformada.
+
+En cuanto a la regresión lineal, Box-Cox devolvió una regresión claramente lineal, demostrando así cómo la transformada realizar el ajuste necesario para la linealidad. 
+
+![image](https://github.com/user-attachments/assets/a842f4a9-5c3f-406c-970e-510385771623)
+
+Además, encontramos un $R^2$ de 0.99701 puntos y un $MSE$ de 0.06319 puntos. En comparación con lo obtenido previo a la transformación Box-Cox, se trata de una mejora significativa, pues regresando a la figura 4.2, antes de Box-Cox encontramos un $R^2 = 0.85865$ y un $MSE = 4.25942$. 
+
+Finalmente, para validar nuestro modelo de regresión lineal ajustado con Box-Cox, utilizamos un conjunto de datos nuevo para predecir sus luminosidades. El resultado gráfico demuestra una alta concordancia entre las luminosidades calculadas con las ecuaciones y las predichas, especialmente para valores bajos y medios. Esto se observa al seguir la línea de predicción con los puntos calculados. 
+
+![image](https://github.com/user-attachments/assets/3fad77f2-ab7e-4a59-b736-e953601721ad)
+
+Sin embargo, en valores de luminosidad altos, por encima de los 60 puntos, se puede observar subestimación en las predicciones, ya que los puntos se desvían por debajo de la línea. Esto puede tener dos razones: la primera es que las estrellas con alta luminosidad suelen ser menos frecuentes y podrían estar siendo poco representadas por el modelo. Asimismo, aunque Box-Cox linealiza la relación en buena medida, no se está capturando a la perfección todas las características de estrellas más masivas. 
+
+Haciendo la recapitulación de todo, podemos decir que nuestra transformación Box-Cox fue suficientemente efectiva. 
+
+
 
 
 
