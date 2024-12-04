@@ -74,6 +74,8 @@ $$
 MSE = \frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)^2
 $$
 
+Podemos interpretar nuestro $MSE$ de 0.06319 como una señal de que nuestras predicciones son bastante precisas con la transformación Box-Cox.
+
 Finalmente, para validar nuestro modelo de regresión lineal ajustado con Box-Cox, utilizamos un conjunto de datos nuevo para predecir sus luminosidades. El resultado gráfico demuestra una alta concordancia entre las luminosidades calculadas con las ecuaciones y las predichas, especialmente para valores bajos y medios. Esto se observa al seguir la línea de predicción con los puntos calculados. 
 
 ![image](https://github.com/user-attachments/assets/3fad77f2-ab7e-4a59-b736-e953601721ad)
