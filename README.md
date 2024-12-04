@@ -60,6 +60,12 @@ En cuanto a la regresión lineal, Box-Cox devolvió una regresión claramente li
 
 Además, encontramos un $R^2$ de 0.99701 puntos y un $MSE$ de 0.06319 puntos. En comparación con lo obtenido previo a la transformación Box-Cox, se trata de una mejora significativa, pues regresando a la figura 4.2, antes de Box-Cox encontramos un $R^2 = 0.85865$ y un $MSE = 4.25942$. 
 
+Recordemos que el $R^2$ (Coeficiente de determinación), es una métrica que mide qué tan bien el modelo explica la variabilidad de los datos observados. Valores cercanos al 1 indicaría que el modelo explica bien los datos, mientras que valores cercanos a 0 indicarían que el modelo no los puede explicar. La ecuación que la describe es:
+
+$$
+R^2 = 1 - \fracc{Suma de Residuos al Cuadrado}{Suma Total al Cuadrado}
+$$
+
 Finalmente, para validar nuestro modelo de regresión lineal ajustado con Box-Cox, utilizamos un conjunto de datos nuevo para predecir sus luminosidades. El resultado gráfico demuestra una alta concordancia entre las luminosidades calculadas con las ecuaciones y las predichas, especialmente para valores bajos y medios. Esto se observa al seguir la línea de predicción con los puntos calculados. 
 
 ![image](https://github.com/user-attachments/assets/3fad77f2-ab7e-4a59-b736-e953601721ad)
