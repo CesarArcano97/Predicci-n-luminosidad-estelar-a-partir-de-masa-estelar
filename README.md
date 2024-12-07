@@ -1,6 +1,6 @@
 # Predicción de Luminosidad Estelar
 
-Este proyecto realiza una predicción de la luminosidad estelar a partir de la masa estelar.
+Este proyecto realiza una predicción de la luminosidad estelar a partir de la masa estelar, utilizando transformaciones de Box-Cox para aproximar linealidad. 
 
 Haz clic aquí para ver la [visualización del código en RPubs](https://rpubs.com/Arcano97/Box-Cox-Luminosidad-Masa-Estelar).
 
